@@ -61,6 +61,7 @@ import {
     MFLanguage,
     MFGooglePayRequest,
     MFSDK,
+    MFError,
 } from 'myfatoorah-reactnative';
 import { myFatoorahConfig } from './MyFatoorahConfig';
 
@@ -68,7 +69,7 @@ const ISENVIRONMENT = 'TEST';
 const PRODUCTION = 'PRODUCTION';
 
 const MyFatoorahGooglePayImplementation = () => {
-    const manualExecuteGPButtonRef = useRef(null);
+    const manualExecuteGPButtonRef = useRef<MFGPayButton | null>(null);
     const tokenization = useRef({});
     const applePaymentData = useRef({});
 
@@ -91,7 +92,7 @@ const MyFatoorahGooglePayImplementation = () => {
         await MFSDK.init(
             myFatoorahConfig.apiKey,
             MFCountry.KUWAIT,
-            ISENVIRONMENT === PRODUCTION ? MFEnvironment.LIVE : MFEnvironment.TEST
+            MFEnvironment.TEST
         );
     };
 
@@ -115,14 +116,14 @@ const MyFatoorahGooglePayImplementation = () => {
         await initiateSessionForMyFatoorah(paymentAmount);
     };
 
-    const initiateSessionForMyFatoorah = async amount => {
+    const initiateSessionForMyFatoorah = async (amount: number) => {
         // Dummy stand-in for our internal INITIATE_SESSION API.
         // In the app: commonAPICallAction('', INITIATE_SESSION, payload)
-        const sessionId = 'DUMMY_SESSION_ID_FROM_INITIATE_SESSION';
+        const sessionId = myFatoorahConfig.sessionId; // Dummy sessionId for testing
         onInitiateSessionSuccess(sessionId, amount);
     };
 
-    const onInitiateSessionSuccess = (sessionId, amount) => {
+    const onInitiateSessionSuccess = (sessionId: string, amount: number) => {
         setupGPWithManualExecute(sessionId, amount);
     };
 
@@ -134,7 +135,7 @@ const MyFatoorahGooglePayImplementation = () => {
     // 3. openSheet()
     // 4. onSessionUpdated → executeGooglePayPayment
     // ===========================================================================
-    const setupGPWithManualExecute = async (sessionId, amount) => {
+    const setupGPWithManualExecute = async (sessionId: string, amount: number) => {
         const request = new MFGooglePayRequest(
             amount.toString(),
             myFatoorahConfig.merchantIdForGoogle,
@@ -144,23 +145,24 @@ const MyFatoorahGooglePayImplementation = () => {
         );
 
         try {
+
             if (!manualExecuteGPButtonRef.current) {
                 throw new Error('Google Pay button is not ready');
             }
 
-            await manualExecuteGPButtonRef.current?.setupWithManualExecute(
+            await manualExecuteGPButtonRef.current.setupWithManualExecute(
                 sessionId,
                 request,
-                updatedSessionId => {
+                (updatedSessionId: string) => {
                     console.log('sessionId: ' + updatedSessionId);
                     executeGooglePayPayment(updatedSessionId || sessionId, amount);
                 },
-                error => {
+                (error: MFError) => {
                     console.log('error : 4 ', error);
                     setButtonLoader(false);
                 }
             );
-            await manualExecuteGPButtonRef.current?.openSheet();
+            await manualExecuteGPButtonRef.current.openSheet();
         } catch (error) {
             console.log('error : 5 ', error);
             setButtonLoader(false);
@@ -173,15 +175,19 @@ const MyFatoorahGooglePayImplementation = () => {
     // After Google Pay updates the session, execute payment on MyFatoorah.
     // On success → Step 5 internal API (onClickContinue).
     // ===========================================================================
-    const executeGooglePayPayment = async (sessionId, amount) => {
+    const executeGooglePayPayment = async (sessionId: string, amount: number) => {
         const executePaymentRequest = new MFExecutePaymentRequest(amount);
         executePaymentRequest.SessionId = sessionId;
 
         try {
-            await manualExecuteGPButtonRef.current?.executePayment(
+            if (!manualExecuteGPButtonRef.current) {
+                throw new Error('Google Pay button is not ready');
+            }
+
+            await manualExecuteGPButtonRef.current.executePayment(
                 executePaymentRequest,
                 MFLanguage.ARABIC,
-                invoiceId => console.log('invoiceId : ' + invoiceId)
+                (invoiceId: string) => console.log('invoiceId : ' + invoiceId)
             );
 
             applePaymentData.current = {
