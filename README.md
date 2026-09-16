@@ -1,97 +1,123 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Ooredoo MyFatoorah Google Pay Example
 
-# Getting Started
+This React Native example reproduces the Ooredoo Kuwait Google Pay flow using
+`myfatoorah-reactnative` **1.4.0** and manual payment execution.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+The example is intended for **Android**. It initializes MyFatoorah in the Kuwait
+test environment, creates a Google Pay request, opens the payment sheet, and
+then executes the payment.
 
-## Step 1: Start Metro
+## Prerequisites
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+Install the following before running the project:
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+- Node.js **22.11.0 or newer**
+- Yarn
+- JDK 17
+- Android Studio and the Android SDK
+- An Android device, or an emulator image that includes Google Play services
+
+Follow the React Native
+[environment setup guide](https://reactnative.dev/docs/set-up-your-environment)
+if Android development is not already configured on the machine.
+
+## Required MyFatoorah configuration
+
+> [!IMPORTANT]
+> Before launching the app, replace **every placeholder** in
+> [`src/MyFatoorahConfig.tsx`](src/MyFatoorahConfig.tsx). The example will not
+> work with the values committed to this repository.
+
+Update these three properties:
+
+```ts
+export class myFatoorahConfig {
+  static apiKey = 'YOUR_MYFATOORAH_TEST_API_KEY';
+  static merchantIdForGoogle = 'YOUR_GOOGLE_PAY_MERCHANT_ID';
+  static sessionId = 'YOUR_FRESH_MYFATOORAH_SESSION_ID';
+}
+```
+
+| Property | Required value |
+| --- | --- |
+| `apiKey` | A valid MyFatoorah **test** API key for Kuwait. |
+| `merchantIdForGoogle` | The Google Pay merchant ID configured for this integration. |
+| `sessionId` | A fresh session ID returned by the MyFatoorah Initiate Session API. The sample uses this value instead of calling the Ooredoo backend. |
+
+The app currently calls `MFSDK.init` with `MFCountry.KUWAIT` and
+`MFEnvironment.TEST` in `src/OoredooCode.tsx`. The API key and session ID must
+belong to that same environment.
+
+Do not commit real API keys or reusable credentials. Restore the placeholders
+before sharing or committing the project.
+
+## Install and launch
+
+From the project root, install the JavaScript dependencies:
 
 ```sh
-# Using npm
-npm start
+yarn install --frozen-lockfile
+```
 
-# OR using Yarn
+Start Metro in the first terminal:
+
+```sh
 yarn start
 ```
 
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
+Keep Metro running. In a second terminal, build and launch the Android app:
 
 ```sh
-# Using npm
-npm run android
-
-# OR using Yarn
 yarn android
 ```
 
-### iOS
+Alternatively, open the `android` directory in Android Studio and run the
+`app` configuration after installing the JavaScript dependencies.
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+## Testing the payment flow
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+1. Confirm that the device or emulator has Google Play services and that a
+   Google account is signed in.
+2. Confirm that all properties in `src/MyFatoorahConfig.tsx` have been replaced.
+3. Launch the app and tap **Pay with Google Pay**.
+4. Review Metro and Logcat output for the session update, invoice ID, or SDK
+   error details.
 
-```sh
-bundle install
+The implementation being tested is in `src/OoredooCode.tsx`. Its sequence is:
+
+1. `MFSDK.init(...)`
+2. `MFGPayButton.setupWithManualExecute(...)`
+3. `MFGPayButton.openSheet()`
+4. `MFGPayButton.executePayment(...)`
+
+The sample currently renders the SDK's `MFGPayButton` off-screen and opens the
+sheet from the visible **Pay with Google Pay** button. It was prepared to
+investigate the Android SDK error:
+
+```text
+Error: Google Pay Launcher not configured
+MFGPayModule.openSheet, error code 017
 ```
 
-Then, and every time you update your native dependencies, run:
+## Troubleshooting
+
+Check the React Native environment first:
 
 ```sh
-bundle exec pod install
+npx react-native doctor
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+If the Android build cache is stale, stop Metro and run:
 
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+```powershell
+Set-Location android
+.\gradlew.bat clean
+Set-Location ..
+yarn start --reset-cache
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+Then run `yarn android` again in a second terminal.
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+If Google Pay does not open, verify the MyFatoorah values again and test on a
+Google Play-enabled Android device or emulator. A plain AOSP emulator does not
+include the Google Play components required by Google Pay.
