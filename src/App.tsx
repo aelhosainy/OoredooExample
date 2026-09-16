@@ -1,6 +1,6 @@
 import { Platform, SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import MyFatoorahGooglePayImplementation from './src/OoredooCode';
+import MyFatoorahGooglePayImplementation from './OoredooCode';
 
 function App() {
   return (
